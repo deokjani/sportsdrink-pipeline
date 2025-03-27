@@ -9,6 +9,8 @@ on:
       - 'data_pipeline/docker/airflow/dags/**'
       - 'data_pipeline/docker/airflow/data_pipeline/etl/**'
 
+  workflow_dispatch:  # ✅ 수동 실행 활성화
+  
 jobs:
   deploy:
     runs-on: ubuntu-latest
