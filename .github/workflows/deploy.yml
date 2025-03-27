@@ -1,4 +1,4 @@
-name: Deploy Minimal Airflow Stack
+name: Deploy Airflow to EC2
 
 on:
   workflow_dispatch:
@@ -11,23 +11,22 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v3
 
-      - name: Deploy to EC2 via SSH
+      - name: SSH deploy
         uses: appleboy/ssh-action@v1.0.0
         with:
           host: ${{ secrets.EC2_HOST }}
           username: ${{ secrets.EC2_USER }}
           key: ${{ secrets.EC2_SSH_KEY }}
           script: |
-            # Docker 설치 (이미 되어있을 수도 있지만, 안전하게 확인)
+            # Docker & docker-compose 설치
             sudo apt-get update -y
             sudo apt-get install -y docker.io
 
-            # Docker Compose 설치
             sudo curl -L "https://github.com/docker/compose/releases/download/v2.23.3/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
             sudo chmod +x /usr/local/bin/docker-compose
-            docker-compose version  # 설치 확인
+            docker-compose --version
 
-            # 폴더 없으면 git clone
+            # Git clone
             if [ ! -d "sportsdrink-pipeline-spark-airflow" ]; then
               git clone https://github.com/deokjani/sportsdrink-pipeline-spark-airflow.git
             fi
@@ -35,7 +34,7 @@ jobs:
             cd sportsdrink-pipeline-spark-airflow
             git pull origin main
 
-            # 서비스 실행
+            # docker-compose up
             docker-compose -f data_pipeline/docker/docker-compose-airflow.yml \
                            -f data_pipeline/docker/docker-compose-postgres.yml \
                            up -d --build
