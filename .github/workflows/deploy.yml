@@ -1,4 +1,4 @@
-name: Deploy Airflow + Postgres to EC2
+name: Deploy Minimal Airflow Stack
 
 on:
   workflow_dispatch:
@@ -18,7 +18,7 @@ jobs:
           username: ${{ secrets.EC2_USER }}
           key: ${{ secrets.EC2_SSH_KEY }}
           script: |
-            # 필수 패키지 설치
+            # Docker & Git 설치
             sudo apt-get update
             sudo apt-get install -y docker.io git curl
 
@@ -27,12 +27,17 @@ jobs:
             sudo chmod +x /usr/local/bin/docker-compose
             sudo ln -s /usr/local/bin/docker-compose /usr/bin/docker-compose
 
-            # 도커 서비스 시작
+            # 도커 데몬 시작
             sudo service docker start
 
-            # 프로젝트 클론 및 실행
-            cd ~/sportsdrink-pipeline-spark-airflow || git clone https://github.com/deokjani/sportsdrink-pipeline-spark-airflow.git && cd sportsdrink-pipeline-spark-airflow
+            # 디렉토리 존재 여부 확인 후 클론
+            if [ ! -d "$HOME/sportsdrink-pipeline-spark-airflow" ]; then
+              git clone https://github.com/deokjani/sportsdrink-pipeline-spark-airflow.git ~/sportsdrink-pipeline-spark-airflow
+            fi
+
+            cd ~/sportsdrink-pipeline-spark-airflow
             git pull origin main
+
             docker-compose -f data_pipeline/docker/docker-compose-airflow.yml \
                            -f data_pipeline/docker/docker-compose-postgres.yml \
                            up -d --build
