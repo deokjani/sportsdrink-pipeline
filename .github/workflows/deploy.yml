@@ -18,20 +18,25 @@ jobs:
           username: ${{ secrets.EC2_USER }}
           key: ${{ secrets.EC2_SSH_KEY }}
           script: |
-            # docker-compose 설치
+            # 1. docker, docker-compose 설치 (EC2가 Ubuntu라면)
+            sudo apt-get update
+            sudo apt-get install -y docker.io curl
+
+            # Docker Compose 설치
             sudo curl -L "https://github.com/docker/compose/releases/download/v2.23.3/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
             sudo chmod +x /usr/local/bin/docker-compose
             docker-compose version
 
-            # git clone (디렉토리 없을 때만)
-            if [ ! -d "sportsdrink-pipeline-spark-airflow" ]; then
-              git clone https://github.com/deokjani/sportsdrink-pipeline-spark-airflow.git
+            # 2. Git 클론 (처음만 실행되도록)
+            if [ ! -d ~/sportsdrink-pipeline-spark-airflow ]; then
+              git clone https://github.com/deokjani/sportsdrink-pipeline-spark-airflow.git ~/sportsdrink-pipeline-spark-airflow
             fi
 
-            cd sportsdrink-pipeline-spark-airflow
+            # 3. 최신 코드 pull
+            cd ~/sportsdrink-pipeline-spark-airflow
             git pull origin main
 
-            # docker-compose 실행
+            # 4. Docker Compose로 Airflow + Postgres 실행
             docker-compose -f data_pipeline/docker/docker-compose-airflow.yml \
-                          -f data_pipeline/docker/docker-compose-postgres.yml \
-                          up -d --build
+                           -f data_pipeline/docker/docker-compose-postgres.yml \
+                           up -d --build
