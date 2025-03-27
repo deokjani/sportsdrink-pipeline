@@ -1,7 +1,7 @@
 name: Deploy Airflow + Postgres to EC2
 
 on:
-  workflow_dispatch:  # 수동 실행 트리거
+  workflow_dispatch:
 
 jobs:
   deploy:
@@ -18,26 +18,21 @@ jobs:
           username: ${{ secrets.EC2_USER }}
           key: ${{ secrets.EC2_SSH_KEY }}
           script: |
-            # 1. Docker & Git 설치
+            # 필수 패키지 설치
             sudo apt-get update
             sudo apt-get install -y docker.io git curl
 
-            # 2. Docker Compose 설치 및 링크
+            # docker-compose 설치
             sudo curl -L "https://github.com/docker/compose/releases/download/v2.23.3/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
             sudo chmod +x /usr/local/bin/docker-compose
             sudo ln -s /usr/local/bin/docker-compose /usr/bin/docker-compose
 
-            # 3. Docker 데몬 실행
+            # 도커 서비스 시작
             sudo service docker start
 
-            # 4. 레포 클론 (없으면) 또는 업데이트
+            # 프로젝트 클론 및 실행
             cd ~/sportsdrink-pipeline-spark-airflow || git clone https://github.com/deokjani/sportsdrink-pipeline-spark-airflow.git && cd sportsdrink-pipeline-spark-airflow
             git pull origin main
-
-            # 5. Docker Compose로 Airflow + Postgres 실행
             docker-compose -f data_pipeline/docker/docker-compose-airflow.yml \
                            -f data_pipeline/docker/docker-compose-postgres.yml \
                            up -d --build
-
-            # 6. 성공 메시지 출력 (선택)
-            echo "✅ Airflow should be available at: http://${{ secrets.EC2_HOST }}:8080"
