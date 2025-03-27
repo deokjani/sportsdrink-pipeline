@@ -1,0 +1,26 @@
+<configuration>
+  <property>
+    <name>fs.s3a.access.key</name>
+    <value>${AWS_ACCESS_KEY_ID}</value>
+  </property>
+  <property>
+    <name>fs.s3a.secret.key</name>
+    <value>${AWS_SECRET_ACCESS_KEY}</value>
+  </property>
+  <property>
+    <name>fs.s3a.endpoint</name>
+    <value>s3.ap-northeast-2.amazonaws.com</value>
+  </property>
+  <property>
+    <name>fs.s3a.path.style.access</name>
+    <value>true</value>
+  </property>
+  <property>
+    <name>fs.s3a.connection.ssl.enabled</name>
+    <value>true</value>
+  </property>
+  <property>
+    <name>fs.s3a.aws.credentials.provider</name>
+    <value>org.apache.hadoop.fs.s3a.SimpleAWSCredentialsProvider</value>
+  </property>
+</configuration>

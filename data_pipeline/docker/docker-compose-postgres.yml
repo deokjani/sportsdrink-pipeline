@@ -1,0 +1,51 @@
+version: '3.8'
+
+services:
+  # 1️⃣ PostgreSQL (Prefect & MLflow DB)
+  progress-db:
+    image: postgres:14.10  # ✅ LTS 안정화 버전
+    container_name: progress-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: progress
+      POSTGRES_PASSWORD: progress
+      POSTGRES_DB: progress
+    ports:
+      - "5432:5432"
+    volumes:
+      - progress_db_data:/var/lib/postgresql/data
+    networks:
+      - elk
+    command: ["bash", "-c", "docker-entrypoint.sh postgres & until pg_isready -U progress -h localhost; do sleep 1; done && \
+          psql -U progress -d postgres -tc \"SELECT 1 FROM pg_database WHERE datname = 'prefect_db'\" | grep -q 1 || psql -U progress -d postgres -c 'CREATE DATABASE prefect_db;' && \
+          psql -U progress -d postgres -tc \"SELECT 1 FROM pg_database WHERE datname = 'mlflow_db'\" | grep -q 1 || psql -U progress -d postgres -c 'CREATE DATABASE mlflow_db;' && \
+          psql -U progress -d postgres -tc \"SELECT 1 FROM pg_database WHERE datname = 'airflow_db'\" | grep -q 1 || psql -U progress -d postgres -c 'CREATE DATABASE airflow_db;' && wait"]
+
+  # 2️⃣ pgAdmin (PostgreSQL 관리 도구)
+  pgadmin:
+    image: dpage/pgadmin4:7.8
+    container_name: pgadmin
+    restart: unless-stopped
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@example.com
+      PGADMIN_DEFAULT_PASSWORD: admin
+    ports:
+      - "5050:80"
+    depends_on:
+      - progress-db
+    volumes:
+      - pgadmin_data:/var/lib/pgadmin
+    networks:
+      - elk
+
+networks:
+  elk:
+    driver: bridge
+
+volumes:
+  progress_db_data:
+  pgadmin_data:
+
+# 2
+# docker-compose -f docker-compose-postgres.yml down
+# docker-compose -f docker-compose-postgres.yml up -d

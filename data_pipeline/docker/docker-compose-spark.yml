@@ -1,0 +1,128 @@
+version: '3.8'
+
+services:
+  # ✅ Spark 마스터 컨테이너 (클러스터 관리 담당)
+  spark-master:
+    image: bitnami/spark:3.5.0
+    container_name: spark-master
+    environment:
+      - SPARK_MODE=master
+    ports:
+      - "8085:8080"              # Spark 마스터 UI
+      - "7077:7077"              # Spark 클러스터 내부 통신 포트
+    volumes:
+      - ./spark/logs/master:/opt/spark/logs    # 마스터 로그 저장
+      - ./spark/conf:/opt/spark/conf           # Spark 공통 설정파일 공유
+    networks:
+      - elk
+
+  # ✅ Spark 워커 컨테이너 (작업 실행 담당)
+  spark-worker:
+    image: bitnami/spark:3.5.0
+    container_name: spark-worker
+    environment:
+      - SPARK_MODE=worker
+      - SPARK_MASTER_URL=spark://spark-master:7077
+    depends_on:
+      - spark-master
+    ports:
+      - "8086:8081"              # Spark 워커 UI
+    volumes:
+      - ./spark/logs/worker:/opt/spark/logs
+      - ./spark/conf:/opt/spark/conf
+    networks:
+      - elk
+
+  # ✅ MySQL 메타스토어 (Hive 메타스토어용 DB)
+  mysql-metastore:
+    image: mysql:8.0
+    container_name: mysql-metastore
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: hive_metastore
+    ports:
+      - "3307:3306"
+    volumes:
+      - ./mysql/init.sql:/docker-entrypoint-initdb.d/init.sql
+      - mysql-data:/var/lib/mysql
+    networks:
+      - elk  
+
+  # ✅ Hive Metastore 컨테이너 (Iceberg 메타정보 저장용)
+  hive-metastore:
+    build: ./hive
+    container_name: hive-metastore
+    image: hive-metastore-iceberg-custom:3.1.3-hadoop3.3.4
+    environment:
+      - HIVE_METASTORE_DB_TYPE=mysql
+      - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
+      - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
+    depends_on:
+      - mysql-metastore
+    ports:
+      - "9083:9083"
+    volumes:
+      - ./hive/hive-site.xml:/opt/hive/conf/hive-site.xml
+      - ./hive/clean_jars.sh:/opt/hive/clean_jars.sh
+      - ./hive/entrypoint.sh:/opt/hive/entrypoint.sh
+      - ./hive/core-site.xml.template:/opt/hive/conf/core-site.xml.template
+    networks:
+      - elk  
+
+  # ✅ Trino (Presto successor) 컨테이너
+  trino:
+    build: ./trino
+    image: trinodb/trino-custom:412
+    container_name: trino
+    ports:
+      - "8088:8080"   # Trino Web UI (http://localhost:8088)
+    depends_on:
+      - hive-metastore
+    networks:
+      - elk
+    volumes:
+      - ./trino/etc:/etc/trino
+      - ./trino/var:/var/trino
+    environment:
+      - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
+      - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}  
+
+  # ✅ PySpark 컨테이너 (Jupyter 환경 + Spark 작업 클라이언트)
+  pyspark:
+    build: ./pyspark
+    container_name: pyspark
+    image: jupyter/pyspark-notebook-custom:spark3.5.0
+    restart: unless-stopped
+    depends_on:
+      - spark-master
+    ports:
+      - "8888:8888"              # Jupyter Notebook UI
+    environment:
+      - SPARK_MASTER=spark://spark-master:7077
+      - PYSPARK_PYTHON=python3
+      - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
+      - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
+      - AWS_DEFAULT_REGION=ap-northeast-2
+    volumes:
+      - pyspark_notebooks:/home/jovyan/work
+      - ./spark/conf:/opt/spark/conf
+    networks:
+      - elk
+    command: >
+      start-notebook.sh --NotebookApp.token='' --NotebookApp.password=''
+
+volumes:
+  mysql-data:
+  spark_master_logs:
+  spark_worker_logs:
+  pyspark_notebooks:
+
+networks:
+  elk:
+    driver: bridge
+
+# 5
+# docker-compose -f docker-compose-spark.yml down               # stop spark-master
+# docker-compose -f docker-compose-spark.yml build --no-cache   # trino
+# docker-compose -f docker-compose-spark.yml up -d              # --build spark-master

@@ -1,0 +1,65 @@
+version: '3.8'
+
+services:
+  filebeat:
+    build:
+      context: ./filebeat  # Dockerfile 위치
+      args:
+        ELASTIC_VERSION: "${ELASTIC_VERSION}"  # ✅ Dockerfile로 변수 전달
+    image: elastic/filebeat:8.17.1
+    container_name: filebeat
+    user: root  # root 권한으로 실행
+    volumes:     
+      - ./airflow/logs:/opt/airflow/logs:rw  # ✅ Filebeat가 Airflow 로그를 읽을 수 있도록 마운트
+      - ./filebeat/filebeat.yml:/usr/share/filebeat/filebeat.yml:ro  # ✅ filebeat 폴더 포함
+      - /var/lib/docker/containers:/var/lib/docker/containers:ro  # Docker 컨테이너 로그를 읽기 위한 경로 마운트 (읽기 전용)
+      - /var/run/docker.sock:/var/run/docker.sock:ro  # Docker 소켓을 읽기 전용으로 마운트하여 컨테이너 메타데이터 수집
+    networks:
+      - elk
+    restart: unless-stopped
+    command: ["filebeat", "-e", "--strict.perms=false"]  # Filebeat 실행 시 로그 출력(-e), 권한 관련 오류 방지(-strict.perms=false)
+
+  nifi:
+    image: apache/nifi:1.15.3
+    container_name: nifi
+    ports:
+      - "8081:8080"  # 호스트 8081 → 컨테이너 8080 (Airflow와 포트 안 겹치게 변경)
+    environment:
+      - NIFI_WEB_HTTP_PORT=8080
+      - NIFI_WEB_HTTP_HOST=0.0.0.0
+      - NIFI_JVM_HEAP_INIT=512m
+      - NIFI_JVM_HEAP_MAX=2g
+      - SINGLE_USER_CREDENTIALS_USERNAME=admin
+      - SINGLE_USER_CREDENTIALS_PASSWORD=admin1234
+    volumes:
+      - nifi_conf:/opt/nifi/nifi-current/conf
+      - nifi_db:/opt/nifi/nifi-current/database_repository
+      - nifi_flowfile:/opt/nifi/nifi-current/flowfile_repository
+      - nifi_content:/opt/nifi/nifi-current/content_repository
+      - nifi_provenance:/opt/nifi/nifi-current/provenance_repository
+      - nifi_state:/opt/nifi/nifi-current/state 
+      - nifi_logs:/opt/nifi/nifi-current/logs 
+      - nifi_data:/opt/nifi/data    
+      - C:/ITWILL/SportsDrinkForecast/data_pipeline/data:/opt/nifi/data
+    networks:
+      - elk
+    restart: unless-stopped
+
+networks:
+  elk:
+    driver: bridge
+
+volumes:
+  nifi_conf:
+  nifi_db:
+  nifi_flowfile:
+  nifi_content:
+  nifi_provenance:  
+  nifi_state:
+  nifi_logs:       
+  nifi_data:
+
+# 4   
+# docker-compose -f docker-compose-extract.yml down
+# docker-compose -f docker-compose-extract.yml build --no-cache
+# docker-compose -f docker-compose-extract.yml up -d

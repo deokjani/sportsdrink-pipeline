@@ -1,0 +1,17 @@
+filebeat.inputs:
+  - type: log
+    enabled: true
+    paths:
+      - "/opt/airflow/logs/naver_sports_drink_etl_daily_dag/*.log"  # ✅ 특정 로그 폴더만 추가
+      - "/opt/airflow/logs/naver_sports_drink_to_elasticsearch_daily_dag/*.log"  # ✅ Elasticsearch 관련 로그만 추가
+
+    # 여러 줄 로그 묶기 (Airflow 로그는 multi-line일 가능성 있음)
+    multiline.pattern: '^\['
+    multiline.negate: true
+    multiline.match: after
+
+    # 불필요한 로그 제외
+    exclude_lines: ['Changing /opt/airflow/logs/', 'Failed to change permission']
+
+output.logstash:
+  hosts: ["logstash:5044"]

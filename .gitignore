@@ -1,0 +1,24 @@
+# .env 파일 (민감정보)
+.env
+
+# Airflow 로그 및 설정
+**/logs/
+**/__pycache__/
+**/.idea/
+**/.vscode/
+**/.DS_Store
+
+# Jupyter, 파이썬 캐시
+.ipynb_checkpoints/
+*.pyc
+*.pyo
+*.pyd
+__pycache__/
+
+# 파이썬 가상환경
+venv/
+env/
+
+# Docker 볼륨 또는 데이터 디렉토리 (선택)
+data/
+output/
