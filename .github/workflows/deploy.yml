@@ -3,18 +3,16 @@ name: Auto Deploy to EC2 on Push
 on:
   push:
     branches:
-      - main  # main 브랜치에 push 될 때 실행
+      - main
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
 
     steps:
-      # 1️⃣ GitHub 코드 체크아웃
       - name: Checkout repository
         uses: actions/checkout@v3
 
-      # 2️⃣ EC2에 Git 클론 & 최신화
       - name: Git clone or pull on EC2
         uses: appleboy/ssh-action@v1.0.0
         with:
@@ -22,14 +20,17 @@ jobs:
           username: ${{ secrets.EC2_USER }}
           key: ${{ secrets.EC2_SSH_KEY }}
           script: |
-            # 📦 프로젝트 clone or pull
-            if [ ! -d ~/sportsdrink-pipeline-spark-airflow ]; then
-              git clone https://github.com/deokjani/sportsdrink-pipeline-spark-airflow.git
+            PROJECT_DIR=~/sportsdrink-pipeline-spark-airflow
+            ENV_PATH=$PROJECT_DIR/data_pipeline/docker/.env
+
+            # ✅ Git clone or pull
+            if [ ! -d "$PROJECT_DIR" ]; then
+              git clone https://github.com/deokjani/sportsdrink-pipeline-spark-airflow.git "$PROJECT_DIR"
             fi
-            cd ~/sportsdrink-pipeline-spark-airflow
+            cd "$PROJECT_DIR"
             git pull origin main
             
-            # 📁 .env 파일 생성
+            # ✅ .env 파일 생성 (절대경로로 명시)
             mkdir -p ~/sportsdrink-pipeline-spark-airflow/data_pipeline/docker
             echo "AWS_ACCESS_KEY_ID=${{ secrets.AWS_ACCESS_KEY_ID }}" > ~/sportsdrink-pipeline-spark-airflow/data_pipeline/docker/.env
             echo "AWS_SECRET_ACCESS_KEY=${{ secrets.AWS_SECRET_ACCESS_KEY }}" >> ~/sportsdrink-pipeline-spark-airflow/data_pipeline/docker/.env
@@ -38,10 +39,5 @@ jobs:
             echo "SLACK_WEBHOOK_URL=${{ secrets.SLACK_WEBHOOK_URL }}" >> ~/sportsdrink-pipeline-spark-airflow/data_pipeline/docker/.env
             echo "YOUTUBE_API_KEY=${{ secrets.YOUTUBE_API_KEY }}" >> ~/sportsdrink-pipeline-spark-airflow/data_pipeline/docker/.env
             
-            echo "✅ EC2 내 .env 파일 생성 완료"
-            cat ~/sportsdrink-pipeline-spark-airflow/data_pipeline/docker/.env
-
-                        # 🐳 Docker Compose 실행
-            docker-compose -f data_pipeline/docker/docker-compose-airflow.yml \
-                           -f data_pipeline/docker/docker-compose-postgres.yml \
-                           up -d --build
+            echo "✅ .env 파일 생성 완료: $ENV_PATH"
+            cat $ENV_PATH

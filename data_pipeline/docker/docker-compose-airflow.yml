@@ -29,7 +29,10 @@ services:
       - ./airflow/logs:/opt/airflow/logs:rw
       - ./airflow/data_pipeline:/opt/airflow/data_pipeline:rw
       - ./data/processed:/opt/airflow/data/processed:rw
+      # scp -i "C:/Users/topcd/.ssh/deokjani-ec2-key.pem" C:/project/sportsdrink-pipeline-spark-airflow/data_pipeline/docker/airflow/setup_airflow.sh ubuntu@3.34.181.37:~/
       # ssh -i "C:/Users/topcd/.ssh/deokjani-ec2-key.pem" ubuntu@3.34.181.37
+      # chmod +x setup_airflow.sh
+      # ./setup_airflow.sh
       # sudo chmod -R 777 ./airflow/dags ./airflow/logs ./airflow/config ./airflow/scripts
       # docker-compose -f data_pipeline/docker/docker-compose-airflow.yml -f data_pipeline/docker/docker-compose-postgres.yml down
       # docker-compose -f data_pipeline/docker/docker-compose-airflow.yml -f data_pipeline/docker/docker-compose-postgres.yml up -d --build
