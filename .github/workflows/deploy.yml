@@ -14,7 +14,7 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v3
 
-      # 2️⃣ .env 파일 생성 (로컬 워크스페이스에서 확실히 생성)
+      # ✅ .env 생성 및 확인
       - name: Create .env file
         run: |
           mkdir -p data_pipeline/docker
@@ -23,18 +23,20 @@ jobs:
           echo "NAVER_CLIENT_ID=${{ secrets.NAVER_CLIENT_ID }}" >> data_pipeline/docker/.env
           echo "NAVER_CLIENT_SECRET=${{ secrets.NAVER_CLIENT_SECRET }}" >> data_pipeline/docker/.env
           echo "SLACK_WEBHOOK_URL=${{ secrets.SLACK_WEBHOOK_URL }}" >> data_pipeline/docker/.env
-          echo "✅ .env 파일 생성 완료:"
+          echo "✅ 생성된 .env 파일 내용:"
           cat data_pipeline/docker/.env
 
-      # 3️⃣ .env 파일을 EC2에 업로드
-      - name: Upload .env to EC2
-        uses: appleboy/scp-action@v0.1.4
+      # ✅ 업로드 후 확인
+      - name: Check .env on EC2
+        uses: appleboy/ssh-action@v1.0.0
         with:
           host: ${{ secrets.EC2_HOST }}
           username: ${{ secrets.EC2_USER }}
           key: ${{ secrets.EC2_SSH_KEY }}
-          source: "data_pipeline/docker/.env"
-          target: "~/sportsdrink-pipeline-spark-airflow/data_pipeline/docker/"
+          script: |
+            echo "📂 EC2 내 .env 파일 확인:"
+            cat ~/sportsdrink-pipeline-spark-airflow/data_pipeline/docker/.env || echo "❌ .env 없음"
+
 
       # 4️⃣ EC2에 접속해서 git clone 또는 pull → docker-compose 실행
       - name: Deploy via SSH
