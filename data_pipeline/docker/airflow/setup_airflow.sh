@@ -44,11 +44,3 @@ fi
 
 echo "✅ 프로젝트 준비 완료"
 
-echo "🐳 STEP 3. Docker Compose로 서비스 실행"
-
-cd ~/sportsdrink-pipeline-spark-airflow
-docker compose -f data_pipeline/docker/docker-compose-postgres.yml \
-               -f data_pipeline/docker/docker-compose-airflow.yml \
-               up -d --build
-
-echo "🚀 Airflow 및 PostgreSQL 컨테이너 실행 완료!"

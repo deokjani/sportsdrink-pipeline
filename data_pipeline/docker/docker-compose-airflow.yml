@@ -34,8 +34,8 @@ services:
       # chmod +x setup_airflow.sh
       # ./setup_airflow.sh
       # sudo chmod -R 777 ./airflow/dags ./airflow/logs ./airflow/config ./airflow/scripts
-      # docker-compose -f data_pipeline/docker/docker-compose-airflow.yml -f data_pipeline/docker/docker-compose-postgres.yml down
-      # docker-compose -f data_pipeline/docker/docker-compose-airflow.yml -f data_pipeline/docker/docker-compose-postgres.yml up -d --build
+      # docker compose -f docker-compose-airflow.yml -f docker-compose-postgres.yml down
+      # docker compose -f docker-compose-airflow.yml -f docker-compose-postgres.yml up -d --build
     networks:
       - elk
     command: >
