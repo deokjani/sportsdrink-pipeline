@@ -14,8 +14,8 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v3
 
-      # 2️⃣ EC2에서 Git 프로젝트 없으면 clone, 있으면 pull
-      - name: Deploy via SSH (git clone & pull)
+      # 2️⃣ EC2에 Git Clone & Pull & .env 경로 미리 생성
+      - name: Deploy via SSH (git clone & pull & mkdir)
         uses: appleboy/ssh-action@v1.0.0
         with:
           host: ${{ secrets.EC2_HOST }}
@@ -27,8 +27,9 @@ jobs:
             fi
             cd ~/sportsdrink-pipeline-spark-airflow
             git pull origin main
+            mkdir -p ~/sportsdrink-pipeline-spark-airflow/data_pipeline/docker  # ✅ .env 저장 경로 미리 생성
 
-      # 3️⃣ .env 파일 생성 (로컬)
+      # 3️⃣ 로컬에서 .env 파일 생성
       - name: Create .env file
         run: |
           mkdir -p data_pipeline/docker
@@ -38,7 +39,7 @@ jobs:
           echo "NAVER_CLIENT_SECRET=${{ secrets.NAVER_CLIENT_SECRET }}" >> data_pipeline/docker/.env
           echo "SLACK_WEBHOOK_URL=${{ secrets.SLACK_WEBHOOK_URL }}" >> data_pipeline/docker/.env
 
-      # 4️⃣ .env 파일 EC2에 업로드 (경로 미리 생성된 상태)
+      # 4️⃣ .env 파일 EC2에 복사
       - name: Upload .env to EC2
         uses: appleboy/scp-action@v0.1.4
         with:
@@ -48,7 +49,7 @@ jobs:
           source: "data_pipeline/docker/.env"
           target: "~/sportsdrink-pipeline-spark-airflow/data_pipeline/docker/"
 
-      # 5️⃣ 도커 컴포즈로 서비스 재시작
+      # 5️⃣ Docker Compose 실행 (Airflow + Postgres)
       - name: Run Docker Compose on EC2
         uses: appleboy/ssh-action@v1.0.0
         with:
