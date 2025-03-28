@@ -3,58 +3,45 @@ name: Auto Deploy to EC2 on Push
 on:
   push:
     branches:
-      - main  # main 브랜치에 push 될 때만 실행
+      - main  # main 브랜치에 push 될 때 실행
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
 
     steps:
-      # 1️⃣ GitHub 레포지토리 코드 체크아웃
+      # 1️⃣ GitHub 코드 체크아웃
       - name: Checkout repository
         uses: actions/checkout@v3
 
-      # ✅ .env 생성 및 확인
-      - name: Create .env file
-        run: |
-          mkdir -p data_pipeline/docker
-          echo "AWS_ACCESS_KEY_ID=${{ secrets.AWS_ACCESS_KEY_ID }}" > data_pipeline/docker/.env
-          echo "AWS_SECRET_ACCESS_KEY=${{ secrets.AWS_SECRET_ACCESS_KEY }}" >> data_pipeline/docker/.env
-          echo "NAVER_CLIENT_ID=${{ secrets.NAVER_CLIENT_ID }}" >> data_pipeline/docker/.env
-          echo "NAVER_CLIENT_SECRET=${{ secrets.NAVER_CLIENT_SECRET }}" >> data_pipeline/docker/.env
-          echo "SLACK_WEBHOOK_URL=${{ secrets.SLACK_WEBHOOK_URL }}" >> data_pipeline/docker/.env
-          echo "✅ 생성된 .env 파일 내용:"
-          cat data_pipeline/docker/.env
-
-      # ✅ 업로드 후 확인
-      - name: Check .env on EC2
+      # 2️⃣ EC2에 Git 클론 & 최신화
+      - name: Git clone or pull on EC2
         uses: appleboy/ssh-action@v1.0.0
         with:
           host: ${{ secrets.EC2_HOST }}
           username: ${{ secrets.EC2_USER }}
           key: ${{ secrets.EC2_SSH_KEY }}
           script: |
-            echo "📂 EC2 내 .env 파일 확인:"
-            cat ~/sportsdrink-pipeline-spark-airflow/data_pipeline/docker/.env || echo "❌ .env 없음"
-
-
-      # 4️⃣ EC2에 접속해서 git clone 또는 pull → docker-compose 실행
-      - name: Deploy via SSH
-        uses: appleboy/ssh-action@v1.0.0
-        with:
-          host: ${{ secrets.EC2_HOST }}
-          username: ${{ secrets.EC2_USER }}
-          key: ${{ secrets.EC2_SSH_KEY }}
-          script: |
-            # 📦 프로젝트가 없으면 clone
+            # 📦 프로젝트 clone or pull
             if [ ! -d ~/sportsdrink-pipeline-spark-airflow ]; then
               git clone https://github.com/deokjani/sportsdrink-pipeline-spark-airflow.git
             fi
-
             cd ~/sportsdrink-pipeline-spark-airflow
             git pull origin main
+            
+            # 📁 .env 파일 생성
+            mkdir -p ~/sportsdrink-pipeline-spark-airflow/data_pipeline/docker
+            echo "AWS_ACCESS_KEY_ID=${{ secrets.AWS_ACCESS_KEY_ID }}" > ~/sportsdrink-pipeline-spark-airflow/data_pipeline/docker/.env
+            echo "AWS_SECRET_ACCESS_KEY=${{ secrets.AWS_SECRET_ACCESS_KEY }}" >> ~/sportsdrink-pipeline-spark-airflow/data_pipeline/docker/.env
+            echo "NAVER_CLIENT_ID=${{ secrets.NAVER_CLIENT_ID }}" >> ~/sportsdrink-pipeline-spark-airflow/data_pipeline/docker/.env
+            echo "NAVER_CLIENT_SECRET=${{ secrets.NAVER_CLIENT_SECRET }}" >> ~/sportsdrink-pipeline-spark-airflow/data_pipeline/docker/.env
+            echo "SLACK_WEBHOOK_URL=${{ secrets.SLACK_WEBHOOK_URL }}" >> ~/sportsdrink-pipeline-spark-airflow/data_pipeline/docker/.env
+            echo "YOUTUBE_API_KEY=${{ secrets.YOUTUBE_API_KEY }}" >> ~/sportsdrink-pipeline-spark-airflow/data_pipeline/docker/.env
+            
+            echo "✅ EC2 내 .env 파일 생성 완료"
+            cat ~/sportsdrink-pipeline-spark-airflow/data_pipeline/docker/.env
 
-            # ✅ docker-compose 실행
+                        # 🐳 Docker Compose 실행
             docker-compose -f data_pipeline/docker/docker-compose-airflow.yml \
                            -f data_pipeline/docker/docker-compose-postgres.yml \
                            up -d --build
