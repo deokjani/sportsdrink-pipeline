@@ -39,3 +39,10 @@ docker-volume/
 # ✅ 시스템 파일
 Thumbs.db
 ehthumbs.db
+
+# ✅ 빌드/다운로드용 바이너리 및 라이브러리 무시
+mysql-connector-j-*.jar
+hadoop-aws-*.jar
+apache-hive-*-bin.tar.gz
+hadoop-*.tar.gz
+aws-java-sdk-bundle-*.jar

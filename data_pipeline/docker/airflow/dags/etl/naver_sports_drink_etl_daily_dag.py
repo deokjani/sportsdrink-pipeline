@@ -1,52 +1,52 @@
 from airflow import DAG
 from airflow.operators.python import PythonOperator
-from datetime import datetime, timedelta
+from datetime import timedelta, datetime
 import subprocess
 import os
 import requests
+from dotenv import load_dotenv
 
-# ✅ Slack Webhook URL
-SLACK_WEBHOOK_URL = os.getenv("SLACK_WEBHOOK_URL")
-
-# ✅ Slack 알림 함수
+# ✅ Slack 알림 함수 (에러 시만 호출)
 def send_slack_alert(context):
-    if not SLACK_WEBHOOK_URL:
-        print("❌ SLACK_WEBHOOK_URL 환경 변수가 없습니다.")
+    slack_url = os.getenv("SLACK_WEBHOOK_URL")
+    if not slack_url:
+        print("❌ SLACK_WEBHOOK_URL 미설정")
         return
 
-    task_instance = context.get("task_instance")
-    dag_id = context.get("dag").dag_id
-    task_id = task_instance.task_id
-    execution_date = context.get("execution_date")
-    log_url = task_instance.log_url
-    status = context.get("state")
-    emoji = ":white_check_mark:" if status == "success" else ":x:"
-    color = "good" if status == "success" else "danger"
-
+    ti = context.get("task_instance")
     message = {
         "attachments": [
             {
-                "color": color,
-                "title": f"{emoji} Airflow DAG Alert",
+                "color": "danger",
+                "title": "Airflow DAG 실패 알림 🚨",
                 "fields": [
-                    {"title": "DAG ID", "value": dag_id, "short": True},
-                    {"title": "Task ID", "value": task_id, "short": True},
-                    {"title": "Execution Date", "value": str(execution_date), "short": False},
-                    {"title": "Status", "value": status.upper(), "short": True},
-                    {"title": "Logs", "value": f"<{log_url}|View Logs>", "short": False},
+                    {"title": "DAG", "value": ti.dag_id, "short": True},
+                    {"title": "Task", "value": ti.task_id, "short": True},
+                    {"title": "Execution Time", "value": str(context.get('execution_date')), "short": False},
+                    {"title": "Log", "value": f"<{ti.log_url}|로그 확인하기>", "short": False},
                 ],
             }
         ]
     }
+    requests.post(slack_url, json=message)
 
-    response = requests.post(SLACK_WEBHOOK_URL, json=message)
-    if response.status_code == 200:
-        print("✅ Slack 알림 전송 성공")
-    else:
-        print(f"❌ Slack 알림 실패: {response.text}")
+# ✅ 실행할 Python 스크립트를 호출하는 함수
+def run_etl_script(script_name, **kwargs):
+    script_path = f"/opt/airflow/scripts/{script_name}"
 
+    # ✅ Airflow 내에서는 docker-compose에서 .env가 주입되지만
+    # subprocess에서는 load_dotenv로 강제 로드 필요할 수 있음
+    load_dotenv(dotenv_path="/opt/airflow/.env")
 
-# ✅ DAG 기본 설정
+    result = subprocess.run(["python", script_path], capture_output=True, text=True)
+    print("✅ STDOUT:\n", result.stdout)
+    if result.stderr:
+        print("⚠️ STDERR:\n", result.stderr)
+
+    if result.returncode != 0:
+        raise Exception(f"❌ {script_name} 실패: {result.stderr}")
+
+# ✅ 기본 DAG 설정
 default_args = {
     "owner": "airflow",
     "depends_on_past": False,
@@ -54,61 +54,34 @@ default_args = {
     "retries": 0,
     "retry_delay": timedelta(minutes=5),
     "on_failure_callback": send_slack_alert,
+
 }
 
-dag = DAG(
+with DAG(
     dag_id="naver_sports_drink_etl_daily_dag",
     default_args=default_args,
+    schedule_interval="0 8 * * *",  # 매일 오전 8시
+    catchup=False,  # 과거 실행 방지
     description="ETL: Naver → PostgreSQL → Parquet → S3",
-    schedule_interval="0 8 * * *",
-    catchup=False,
-    max_active_runs=1,
-)
+    tags=["sports_drink", "naver"],
+) as dag:
 
+    task_naver_to_pg = PythonOperator(
+        task_id="naver_sports_drink_to_postgresql",
+        python_callable=run_etl_script,
+        op_kwargs={"script_name": "naver_sports_drink_to_postgresql.py"},
+    )
 
-def run_script(script_name, **kwargs):
-    script_path = f"/opt/airflow/data_pipeline/scripts/{script_name}"
-    try:
-        result = subprocess.run(["python", script_path], check=True, text=True, capture_output=True)
-        print(f"✅ {script_name} STDOUT:\n{result.stdout}")
-        if result.stderr:
-            print(f"⚠️ STDERR:\n{result.stderr}")
+    task_pg_to_parquet = PythonOperator(
+        task_id="naver_sports_drink_postgresql_to_parquet",
+        python_callable=run_etl_script,
+        op_kwargs={"script_name": "naver_sports_drink_postgresql_to_parquet.py"},
+    )
 
-        send_slack_alert({
-            "task_instance": kwargs.get("task_instance"),
-            "dag": kwargs.get("dag"),
-            "execution_date": kwargs.get("execution_date"),
-            "state": "success",
-        })
-    except subprocess.CalledProcessError as e:
-        print(f"❌ {script_name} 실패: {e}")
-        send_slack_alert({
-            "task_instance": kwargs.get("task_instance"),
-            "dag": kwargs.get("dag"),
-            "execution_date": kwargs.get("execution_date"),
-            "state": "failed",
-        })
-        raise
+    task_upload_to_s3 = PythonOperator(
+        task_id="naver_sports_drink_upload_parquet_to_s3",
+        python_callable=run_etl_script,
+        op_kwargs={"script_name": "naver_sports_drink_upload_parquet_to_s3.py"},
+    )
 
-task_naver_to_pg = PythonOperator(
-    task_id="naver_sports_drink_to_postgresql",
-    python_callable=run_script,
-    op_kwargs={"script_name": "naver_sports_drink_to_postgresql.py"},
-    dag=dag,
-)
-
-task_pg_to_parquet = PythonOperator(
-    task_id="naver_sports_drink_postgresql_to_parquet",
-    python_callable=run_script,
-    op_kwargs={"script_name": "naver_sports_drink_postgresql_to_parquet.py"},
-    dag=dag,
-)
-
-task_upload_to_s3 = PythonOperator(
-    task_id="naver_sports_drink_upload_parquet_to_s3",
-    python_callable=run_script,
-    op_kwargs={"script_name": "naver_sports_drink_upload_parquet_to_s3.py"},
-    dag=dag,
-)
-
-task_naver_to_pg >> task_pg_to_parquet >> task_upload_to_s3
+    task_naver_to_pg >> task_pg_to_parquet >> task_upload_to_s3

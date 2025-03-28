@@ -1,44 +1,43 @@
-FROM ubuntu:20.04
-
-ENV HIVE_VERSION=3.1.3
-ENV HADOOP_VERSION=3.3.4
-ENV DEBIAN_FRONTEND=noninteractive
+FROM openjdk:8-jdk
 
 # 필수 패키지 설치
-RUN apt-get update && apt-get install -y \
-    curl wget tar openjdk-11-jdk gnupg lsb-release netcat \
-    && apt-get clean
+RUN apt-get update && \
+    apt-get install -y wget curl unzip python3-pip gettext && \
+    apt-get clean
 
-# JAVA 환경변수
-ENV JAVA_HOME=/usr/lib/jvm/java-11-openjdk-amd64
-ENV PATH=$PATH:$JAVA_HOME/bin
+# AWS CLI 설치
+RUN pip3 install awscli
 
-# Hive 다운로드 및 설치
-RUN curl -O https://archive.apache.org/dist/hive/hive-${HIVE_VERSION}/apache-hive-${HIVE_VERSION}-bin.tar.gz \
-    && tar -xzf apache-hive-${HIVE_VERSION}-bin.tar.gz -C /opt/ \
-    && rm apache-hive-${HIVE_VERSION}-bin.tar.gz \
-    && ln -s /opt/apache-hive-${HIVE_VERSION}-bin /opt/hive
+# Hadoop 3.3.4 복사 & 설치
+COPY hadoop-3.3.4.tar.gz /opt/
+RUN tar -xzf /opt/hadoop-3.3.4.tar.gz -C /opt/ && \
+    mv /opt/hadoop-3.3.4 /opt/hadoop && \
+    rm -f /opt/hadoop-3.3.4.tar.gz
 
-# Hadoop 다운로드
-RUN curl -O https://archive.apache.org/dist/hadoop/common/hadoop-${HADOOP_VERSION}/hadoop-${HADOOP_VERSION}.tar.gz \
-    && tar -xzf hadoop-${HADOOP_VERSION}.tar.gz -C /opt/ \
-    && rm hadoop-${HADOOP_VERSION}.tar.gz \
-    && ln -s /opt/hadoop-${HADOOP_VERSION} /opt/hadoop
+ENV HADOOP_HOME=/opt/hadoop
+ENV PATH=$HADOOP_HOME/bin:$PATH
 
-# AWS SDK 다운로드
-RUN curl -o /opt/hive/lib/aws-java-sdk-bundle.jar \
-    https://repo1.maven.org/maven2/com/amazonaws/aws-java-sdk-bundle/1.12.262/aws-java-sdk-bundle-1.12.262.jar
+# Hive 3.1.3 복사 & 설치
+COPY apache-hive-3.1.3-bin.tar.gz /opt/
+RUN tar -xzf /opt/apache-hive-3.1.3-bin.tar.gz -C /opt/ && \
+    mv /opt/apache-hive-3.1.3-bin /opt/hive && \
+    rm -f /opt/apache-hive-3.1.3-bin.tar.gz
 
-# 로컬 jar 및 설정 파일들 복사
+ENV HIVE_HOME=/opt/hive
+ENV PATH=$HIVE_HOME/bin:$PATH
+
+# 최신 JAR 복사
+COPY hadoop-aws-3.3.4.jar /opt/hive/lib/
+COPY aws-java-sdk-bundle-1.12.262.jar /opt/hive/lib/
 COPY mysql-connector-j-8.0.33.jar /opt/hive/lib/
-COPY hadoop-aws-3.3.4.jar /opt/hadoop/share/hadoop/common/lib/
-COPY hive-site.xml /opt/hive/conf/
-COPY core-site.xml.template /opt/hive/conf/
-COPY clean_jars.sh /opt/hive/
-COPY entrypoint.sh /opt/hive/
 
-# 실행권한 부여
-RUN chmod +x /opt/hive/clean_jars.sh /opt/hive/entrypoint.sh
+# 설정 파일 및 스크립트 복사
+COPY hive-site.xml /opt/hive/conf/hive-site.xml
+COPY clean_jars.sh /opt/hive/clean_jars.sh
+RUN chmod +x /opt/hive/clean_jars.sh
 
-# Entrypoint
+COPY core-site.xml.template /opt/hive/conf/core-site.xml.template
+COPY entrypoint.sh /opt/hive/entrypoint.sh
+RUN chmod +x /opt/hive/entrypoint.sh
+
 ENTRYPOINT ["/opt/hive/entrypoint.sh"]

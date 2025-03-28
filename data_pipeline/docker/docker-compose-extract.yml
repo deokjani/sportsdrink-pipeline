@@ -59,7 +59,7 @@ volumes:
   nifi_logs:       
   nifi_data:
 
-# 4   
+# 3   
 # docker-compose -f docker-compose-extract.yml down
 # docker-compose -f docker-compose-extract.yml build --no-cache
 # docker-compose -f docker-compose-extract.yml up -d

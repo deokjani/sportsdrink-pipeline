@@ -6,6 +6,10 @@ import subprocess
 import os
 import logging
 import requests
+from dotenv import load_dotenv
+
+# ✅ 환경변수 강제 로드 (.env 경로는 Docker에서 마운트한 위치)
+load_dotenv(dotenv_path="/opt/airflow/.env")
 
 log = logging.getLogger(__name__)
 SLACK_WEBHOOK_URL = os.getenv("SLACK_WEBHOOK_URL")
@@ -37,7 +41,7 @@ def send_slack_message(message):
         log.error(f"🚨 Slack 전송 실패: {e}")
 
 def run_script():
-    script_path = "/opt/airflow/data_pipeline/scripts/naver_sports_drink_to_elasticsearch.py"
+    script_path = "/opt/airflow/scripts/naver_sports_drink_to_elasticsearch.py"
     log.info(f"🚀 실행: {script_path}")
     send_slack_message(f"🚀 DAG 실행 시작: `{script_path}`")
 
@@ -46,8 +50,9 @@ def run_script():
         log.info(f"✅ 실행 성공:\n{result.stdout}")
         send_slack_message(f"✅ 성공: `{script_path}`\n```{result.stdout}```")
     except subprocess.CalledProcessError as e:
-        log.error(f"❌ 실행 실패: {e.stderr or e.stdout}")
-        send_slack_message(f"❌ 실패: `{script_path}`\n```{e.stderr or e.stdout}```")
+        error_msg = e.stderr or e.stdout or "알 수 없는 오류"
+        log.error(f"❌ 실행 실패: {error_msg}")
+        send_slack_message(f"❌ 실패: `{script_path}`\n```{error_msg}```")
         raise
 
 run_task = PythonOperator(

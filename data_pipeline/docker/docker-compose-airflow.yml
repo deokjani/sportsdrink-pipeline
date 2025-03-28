@@ -27,8 +27,9 @@ services:
       - airflow_config:/opt/airflow/config
       - ./airflow/dags:/opt/airflow/dags:rw
       - ./airflow/logs:/opt/airflow/logs:rw
-      - ./airflow/data_pipeline:/opt/airflow/data_pipeline:rw
-      - ./data/processed:/opt/airflow/data/processed:rw
+      - ./airflow/scripts:/opt/airflow/scripts:rw
+      - ./airflow/data/processed:/opt/airflow/data/processed:rw
+      - ./.env:/opt/airflow/.env:ro   # ✅ Python 스크립트에서도 읽을 수 있게 명시적으로 Mount
       # scp -i "C:/Users/topcd/.ssh/deokjani-ec2-key.pem" C:/project/sportsdrink-pipeline-spark-airflow/data_pipeline/docker/airflow/setup_airflow.sh ubuntu@43.201.77.96:~/
       # ssh -i "C:/Users/topcd/.ssh/deokjani-ec2-key.pem" ubuntu@43.201.77.96
       # chmod +x setup_airflow.sh
@@ -59,7 +60,7 @@ volumes:
   airflow_config:
 
 
-# 3   
+# 4   
 # docker-compose -f docker-compose-airflow.yml down
 # docker-compose -f docker-compose-airflow.yml build --no-cache
 # docker-compose -f docker-compose-airflow.yml up -d
