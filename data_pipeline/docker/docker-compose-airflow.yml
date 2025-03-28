@@ -15,11 +15,10 @@ services:
       - AIRFLOW__CORE__DAGS_FOLDER=/opt/airflow/dags
       - AIRFLOW__CORE__DEFAULT_TIMEZONE=Asia/Seoul
       - TZ=Asia/Seoul
+      - AIRFLOW__LOGGING__LOG_FILENAME_TEMPLATE={{ ti.dag_id }}/{{ (execution_date + macros.timedelta(hours=9)).strftime("%Y-%m-%d_%H-%M-%S") }}_{{ ti.task_id }}.log
       - AIRFLOW__DATABASE__SQL_ALCHEMY_CONN=postgresql+psycopg2://progress:progress@progress-db:5432/airflow_db
       - AIRFLOW__WEBSERVER__DEFAULT_USER=admin
       - AIRFLOW__WEBSERVER__DEFAULT_PASSWORD=admin
-      - AIRFLOW__LOGGING__LOG_FILENAME_TEMPLATE={{ ti.dag_id }}/{{ (execution_date + macros.timedelta(hours=9)).strftime("%Y-%m-%d_%H-%M-%S") }}_{{ ti.task_id }}.log
-      - BASE_PATH=/opt/airflow/data_pipeline
     ports:
       - "8080:8080"
     volumes:
