@@ -1,51 +1,41 @@
 version: '3.8'
 
 services:
-  # 1️⃣ Airflow Web UI & Scheduler
   airflow:
-    build: ./airflow  # ✅ Dockerfile을 사용하여 Airflow 빌드
-    image: apache/airflow-custom:2.7.3    
+    build: ./airflow
+    image: apache/airflow-custom:2.7.3
     container_name: airflow
     restart: unless-stopped
+    env_file:
+      - .env  # ✅ 이 한 줄로 모든 환경변수 자동 주입!
     environment:
       - AIRFLOW__CORE__EXECUTOR=LocalExecutor
+      - AIRFLOW__CORE__DAG_DISCOVERY_SAFE_MODE=False
+      - AIRFLOW__CORE__LOAD_EXAMPLES=False
+      - AIRFLOW__CORE__DAGS_FOLDER=/opt/airflow/dags
+      - AIRFLOW__CORE__DEFAULT_TIMEZONE=Asia/Seoul
+      - TZ=Asia/Seoul
       - AIRFLOW__DATABASE__SQL_ALCHEMY_CONN=postgresql+psycopg2://progress:progress@progress-db:5432/airflow_db
       - AIRFLOW__WEBSERVER__DEFAULT_USER=admin
       - AIRFLOW__WEBSERVER__DEFAULT_PASSWORD=admin
-      - BASE_PATH=/opt/airflow/data_pipeline  # ✅ 절대 경로 환경 변수 추가
-      - TZ=Asia/Seoul  # ✅ KST(UTC+9)로 설정
-      - AIRFLOW__CORE__DEFAULT_TIMEZONE=Asia/Seoul  # ✅ Airflow 실행 시간대 변경
-      - AIRFLOW__CORE__DAG_DISCOVERY_SAFE_MODE=False  # ✅ DAG 서브폴더 자동 인식 활성화 / dag 강제 인식 명령어 # docker exec -it airflow airflow dags reserialize
-      - AIRFLOW__CORE__LOAD_EXAMPLES=False  # 예제 DAG 비활성화
-      - AIRFLOW__CORE__DAGS_FOLDER=/opt/airflow/dags  # DAG 폴더 경로
       - AIRFLOW__LOGGING__LOG_FILENAME_TEMPLATE={{ ti.dag_id }}/{{ (execution_date + macros.timedelta(hours=9)).strftime("%Y-%m-%d_%H-%M-%S") }}_{{ ti.task_id }}.log
-      - NAVER_CLIENT_ID=${NAVER_CLIENT_ID}
-      - NAVER_CLIENT_SECRET=${NAVER_CLIENT_SECRET}
-      - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
-      - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
-      - AWS_DEFAULT_REGION=ap-northeast-2
-      - SLACK_WEBHOOK_URL=${SLACK_WEBHOOK_URL}  # ✅ Slack Webhook URL 추가
+      - BASE_PATH=/opt/airflow/data_pipeline
     ports:
       - "8080:8080"
     volumes:
       - airflow_dags:/opt/airflow/dags
       - airflow_logs:/opt/airflow/logs
       - airflow_config:/opt/airflow/config
-      - ./airflow/dags:/opt/airflow/dags:rw  # Windows에서도 DAG 확인 가능
-      - ./airflow/logs:/opt/airflow/logs:rw  # Windows에서도 로그 확인 가능
+      - ./airflow/dags:/opt/airflow/dags:rw
+      - ./airflow/logs:/opt/airflow/logs:rw
       - ./airflow/data_pipeline:/opt/airflow/data_pipeline:rw
-      - C:/ITWILL/SportsDrinkForecast/data_pipeline/data/processed:/opt/airflow/data/processed:rw 
-      - C:/Users/topcd/.aws:/root/.aws  # Windows에서는 절대경로 사용!
-      - .env:/opt/airflow/.env  # ✅ .env 파일 컨테이너 내부에 마운트
+      - ./data/processed:/opt/airflow/data/processed:rw
     networks:
       - elk
     command: >
-      bash -c "airflow db init &&
-            airflow db migrate &&
-            airflow users create --username admin --password admin --role Admin --email admin@example.com --firstname admin --lastname user &&
-            airflow scheduler & airflow webserver"
-
-
+      bash -c "airflow db init && airflow db migrate &&
+               airflow users create --username admin --password admin --role Admin --email admin@example.com --firstname admin --lastname user &&
+               airflow scheduler & airflow webserver"
 
 networks:
   elk:
@@ -55,6 +45,7 @@ volumes:
   airflow_dags:
   airflow_logs:
   airflow_config:
+
 
 # 3   
 # docker-compose -f docker-compose-airflow.yml down

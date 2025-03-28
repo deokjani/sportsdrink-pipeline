@@ -11,10 +11,6 @@ import psycopg2  # ✅ PostgreSQL 연결 라이브러리
 from dotenv import load_dotenv
 from datetime import datetime
 
-# ✅ .env 파일 로드
-env_path = "C:\\ITWILL\\SportsDrinkForecast\\docker-elk\\.env"
-load_dotenv(env_path)
-
 # ✅ PostgreSQL 연결 설정
 DB_HOST = "progress-db"
 DB_PORT = "5432"
