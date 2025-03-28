@@ -3,7 +3,7 @@ name: Auto Deploy to EC2 on Push
 on:
   push:
     branches:
-      - main  # main 브랜치에 push 될 때만 동작
+      - main  # main 브랜치에 push 될 때만 작동
 
 jobs:
   deploy:
@@ -14,7 +14,21 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v3
 
-      # 2️⃣ EC2에서 사용할 .env 파일 생성
+      # 2️⃣ EC2에서 Git 프로젝트 없으면 clone, 있으면 pull
+      - name: Deploy via SSH (git clone & pull)
+        uses: appleboy/ssh-action@v1.0.0
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USER }}
+          key: ${{ secrets.EC2_SSH_KEY }}
+          script: |
+            if [ ! -d ~/sportsdrink-pipeline-spark-airflow ]; then
+              git clone https://github.com/deokjani/sportsdrink-pipeline-spark-airflow.git
+            fi
+            cd ~/sportsdrink-pipeline-spark-airflow
+            git pull origin main
+
+      # 3️⃣ .env 파일 생성 (로컬)
       - name: Create .env file
         run: |
           mkdir -p data_pipeline/docker
@@ -24,7 +38,7 @@ jobs:
           echo "NAVER_CLIENT_SECRET=${{ secrets.NAVER_CLIENT_SECRET }}" >> data_pipeline/docker/.env
           echo "SLACK_WEBHOOK_URL=${{ secrets.SLACK_WEBHOOK_URL }}" >> data_pipeline/docker/.env
 
-      # 3️⃣ .env 파일만 EC2로 업로드
+      # 4️⃣ .env 파일 EC2에 업로드 (경로 미리 생성된 상태)
       - name: Upload .env to EC2
         uses: appleboy/scp-action@v0.1.4
         with:
@@ -34,23 +48,15 @@ jobs:
           source: "data_pipeline/docker/.env"
           target: "~/sportsdrink-pipeline-spark-airflow/data_pipeline/docker/"
 
-      # 4️⃣ EC2에서 git pull & docker-compose 실행
-      - name: Deploy via SSH
+      # 5️⃣ 도커 컴포즈로 서비스 재시작
+      - name: Run Docker Compose on EC2
         uses: appleboy/ssh-action@v1.0.0
         with:
           host: ${{ secrets.EC2_HOST }}
           username: ${{ secrets.EC2_USER }}
           key: ${{ secrets.EC2_SSH_KEY }}
           script: |
-            # 📦 프로젝트가 없으면 clone
-            if [ ! -d ~/sportsdrink-pipeline-spark-airflow ]; then
-              git clone https://github.com/deokjani/sportsdrink-pipeline-spark-airflow.git
-            fi
-
             cd ~/sportsdrink-pipeline-spark-airflow
-            git pull origin main
-
-            # ✅ docker-compose 빌드 및 실행
             docker-compose -f data_pipeline/docker/docker-compose-airflow.yml \
                            -f data_pipeline/docker/docker-compose-postgres.yml \
                            up -d --build
