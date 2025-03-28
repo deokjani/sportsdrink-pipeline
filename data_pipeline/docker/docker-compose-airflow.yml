@@ -29,19 +29,23 @@ services:
       - ./airflow/logs:/opt/airflow/logs:rw
       - ./airflow/data_pipeline:/opt/airflow/data_pipeline:rw
       - ./data/processed:/opt/airflow/data/processed:rw
-      # scp -i "C:/Users/topcd/.ssh/deokjani-ec2-key.pem" C:/project/sportsdrink-pipeline-spark-airflow/data_pipeline/docker/airflow/setup_airflow.sh ubuntu@3.34.181.37:~/
-      # ssh -i "C:/Users/topcd/.ssh/deokjani-ec2-key.pem" ubuntu@3.34.181.37
+      # scp -i "C:/Users/topcd/.ssh/deokjani-ec2-key.pem" C:/project/sportsdrink-pipeline-spark-airflow/data_pipeline/docker/airflow/setup_airflow.sh ubuntu@52.79.251.32:~/
+      # ssh -i "C:/Users/topcd/.ssh/deokjani-ec2-key.pem" ubuntu@52.79.251.32
+      # cd ~/sportsdrink-pipeline-spark-airflow
       # chmod +x setup_airflow.sh
       # ./setup_airflow.sh
-      # sudo chmod -R 777 ./airflow/dags ./airflow/logs ./airflow/config ./airflow/scripts
-      # docker compose -f docker-compose-airflow.yml -f docker-compose-postgres.yml down
       # docker compose -f docker-compose-airflow.yml -f docker-compose-postgres.yml up -d --build
+      # docker compose -f docker-compose-airflow.yml -f docker-compose-postgres.yml down
+      # sudo chmod -R 777 ./airflow/dags ./airflow/logs ./airflow/config ./airflow/scripts
+      # docker compose -f docker-compose-airflow.yml -f docker-compose-postgres.yml up -d
+      # docker logs airflow
     networks:
       - elk
     command: >
       bash -c "airflow db init && airflow db migrate &&
-               airflow users create --username admin --password admin --role Admin --email admin@example.com --firstname admin --lastname user &&
-               airflow scheduler & airflow webserver"
+              airflow users create --username admin --password admin --role Admin --email admin@example.com --firstname admin --lastname user &&
+              airflow webserver"
+
 
 networks:
   elk:
