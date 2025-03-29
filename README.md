@@ -1,5 +1,5 @@
 
-# SportsDrink Pipeline: 실시간 검색량 기반 데이터 파이프라인 구축
+# SportsDrink Pipeline: API 기반 ETL 데이터 파이프라인 구축
 
 이 프로젝트는 스포츠음료 키워드에 대한 실시간 검색 데이터를 수집하고, 정제하여 분석 가능한 구조로 저장하는 End-to-End 데이터 파이프라인입니다.  
 YouTube, Naver 등 외부 API를 통해 데이터를 수집하고, Spark와 Iceberg를 활용해 효율적으로 관리할 수 있는 데이터 저장 구조를 구현했습니다.  
