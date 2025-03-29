@@ -5,7 +5,7 @@ from googleapiclient.discovery import build
 from dotenv import load_dotenv
 
 # ✅ 환경변수 로드 (여기에 AWS 및 YouTube API KEY가 저장된 .env 파일 경로 지정)
-load_dotenv(r"C:/ITWILL/SportsDrinkForecast/docker-elk/.env")
+load_dotenv(r"C:/project/sportsdrink-pipeline-spark-airflow/data_pipeline/docker/.env")
 YOUTUBE_API_KEY = os.getenv("YOUTUBE_API_KEY")
 
 # ✅ YouTube API 클라이언트 초기화
@@ -118,7 +118,7 @@ if __name__ == "__main__":
     search_keyword = "이온음료 추천"  # 분석할 키워드
 
     # ✅ 경로 및 폴더명 정보
-    save_root_dir = "C:/ITWILL/SportsDrinkForecast/data_pipeline/data/raw/"
+    save_root_dir = "C:/project/sportsdrink-pipeline-spark-airflow/data_pipeline/data/raw/"
     service_name = "sportsdrink"  # 서비스명
     data_source = "youtube"  # 데이터 출처 (ex: Twitter, Naver, YouTube 등)
     data_type = "search"  # 데이터 성격 (ex: Search, Sales, Trend, Log 등)

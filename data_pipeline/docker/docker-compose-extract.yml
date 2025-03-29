@@ -40,7 +40,7 @@ services:
       - nifi_state:/opt/nifi/nifi-current/state 
       - nifi_logs:/opt/nifi/nifi-current/logs 
       - nifi_data:/opt/nifi/data    
-      - C:/ITWILL/SportsDrinkForecast/data_pipeline/data:/opt/nifi/data
+      - C:/project/sportsdrink-pipeline-spark-airflow/data_pipeline/data:/opt/nifi/data
     networks:
       - elk
     restart: unless-stopped

@@ -48,18 +48,27 @@ services:
       - mysql-data:/var/lib/mysql
     networks:
       - elk  
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-proot"]
+      interval: 10s
+      retries: 10
+      timeout: 5s
 
   # ✅ Hive Metastore 컨테이너 (Iceberg 메타정보 저장용)
   hive-metastore:
     build: ./hive
     container_name: hive-metastore
     image: hive-metastore-iceberg-custom:3.1.3-hadoop3.3.4
+    restart: on-failure
+    env_file:
+      - .env
     environment:
       - HIVE_METASTORE_DB_TYPE=mysql
       - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
-      - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
+      - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}            
     depends_on:
-      - mysql-metastore
+      mysql-metastore:
+        condition: service_healthy
     ports:
       - "9083:9083"
     volumes:
@@ -75,6 +84,8 @@ services:
     build: ./trino
     image: trinodb/trino-custom:412
     container_name: trino
+    env_file:
+      - .env
     ports:
       - "8088:8080"   # Trino Web UI (http://localhost:8088)
     depends_on:
@@ -84,9 +95,9 @@ services:
     volumes:
       - ./trino/etc:/etc/trino
       - ./trino/var:/var/trino
-    environment:
+    environment:       # 꼭 필요한 값만 명시적으로 보장
       - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
-      - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}  
+      - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}     
 
   # ✅ PySpark 컨테이너 (Jupyter 환경 + Spark 작업 클라이언트)
   pyspark:
@@ -94,6 +105,8 @@ services:
     container_name: pyspark
     image: jupyter/pyspark-notebook-custom:spark3.5.0
     restart: unless-stopped
+    env_file:
+      - .env
     depends_on:
       - spark-master
     ports:
@@ -101,9 +114,6 @@ services:
     environment:
       - SPARK_MASTER=spark://spark-master:7077
       - PYSPARK_PYTHON=python3
-      - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
-      - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
-      - AWS_DEFAULT_REGION=ap-northeast-2
     volumes:
       - pyspark_notebooks:/home/jovyan/work
       - ./spark/conf:/opt/spark/conf

@@ -2,10 +2,10 @@ import pandas as pd
 import os
 
 # ✅ 1. 경로 설정 (실버 CSV 불러오기 경로)
-LOAD_PATH = r"C:\ITWILL\SportsDrinkForecast\data_pipeline\data\processed\sportsdrink_youtube_search_daily_silver"
+LOAD_PATH = r"C:\project\sportsdrink-pipeline-spark-airflow\data_pipeline\data\processed\sportsdrink_youtube_search_daily_silver"
 
 # ✅ 2. 저장 경로 (최종 학습용 feature CSV 저장 경로)
-SAVE_PATH = r"C:\ITWILL\SportsDrinkForecast\data_pipeline\data\features\sportsdrink_youtube_search_daily"
+SAVE_PATH = r"C:\project\sportsdrink-pipeline-spark-airflow\data_pipeline\data\features\sportsdrink_youtube_search_daily"
 os.makedirs(SAVE_PATH, exist_ok=True)  # 경로 없으면 자동 생성
 
 # ✅ 3. CSV 파일 불러오기 (비디오 / 채널 / 댓글 feature)

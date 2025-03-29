@@ -12,7 +12,7 @@ from dotenv import load_dotenv
 from datetime import datetime
 
 # ✅ .env 파일 로드
-env_path = "C:\\ITWILL\\SportsDrinkForecast\\docker-elk\\.env"
+env_path = "C:\\project\\sportsdrink-pipeline-spark-airflow\\data_pipeline\\docker\\.env"
 load_dotenv(env_path)
 
 # ✅ PostgreSQL 연결 설정

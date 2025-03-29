@@ -16,7 +16,7 @@ es = Elasticsearch("http://localhost:9200")
 index_name = "sports_drink_search"
 
 # ✅ .env 파일 로드
-env_path = "C:\\ITWILL\\SportsDrinkForecast\\docker-elk\\.env"
+env_path = "C:\\project\\sportsdrink-pipeline-spark-airflow\\data_pipeline\\docker\\.env"
 load_dotenv(env_path)
 
 # ✅ 환경 변수 가져오기

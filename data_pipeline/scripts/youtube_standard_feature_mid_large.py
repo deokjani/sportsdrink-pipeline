@@ -20,7 +20,7 @@ standard_features_mid_large = {
 standard_df = pd.DataFrame([standard_features_mid_large])
 
 # ✅ 저장 경로
-save_dir = r"C:\ITWILL\SportsDrinkForecast\data_pipeline\data\features\sportsdrink_youtube_search_daily"
+save_dir = r"C:\project\sportsdrink-pipeline-spark-airflow\data_pipeline\data\features\sportsdrink_youtube_search_daily"
 save_path = os.path.join(save_dir, "standard_feature_mid_large.csv")
 
 # 경로 없으면 생성

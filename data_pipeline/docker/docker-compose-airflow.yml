@@ -7,7 +7,7 @@ services:
     container_name: airflow
     restart: unless-stopped
     env_file:
-      - .env  # ✅ 이 한 줄로 모든 환경변수 자동 주입!
+      - .env
     environment:
       - AIRFLOW__CORE__EXECUTOR=LocalExecutor
       - AIRFLOW__CORE__DAG_DISCOVERY_SAFE_MODE=False

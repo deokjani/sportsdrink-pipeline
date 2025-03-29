@@ -11,7 +11,7 @@ PG_PASSWORD = "progress"
 PG_PORT = 5432
 
 # ✅ 저장 경로
-save_dir = "C:/ITWILL/SportsDrinkForecast/data_pipeline/data/raw/"
+save_dir = "C:/project/sportsdrink-pipeline-spark-airflow/data_pipeline/data/raw/"
 os.makedirs(save_dir, exist_ok=True)
 
 # ✅ 파일명 구성 요소

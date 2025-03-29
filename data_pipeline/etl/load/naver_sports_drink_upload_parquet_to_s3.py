@@ -8,7 +8,7 @@ S3_REGION = "ap-northeast-2"  # 🔹 AWS 리전
 S3_KEY_PREFIX = "data/processed/"  # 🔹 S3 저장 경로 (폴더처럼 사용)
 
 # ✅ Parquet 저장 경로
-save_dir = "C:/ITWILL/SportsDrinkForecast/data_pipeline/data/processed"
+save_dir = "C:/project/sportsdrink-pipeline-spark-airflow/data_pipeline/data/processed"
 os.makedirs(save_dir, exist_ok=True)
 
 # 파일명 구성 요소

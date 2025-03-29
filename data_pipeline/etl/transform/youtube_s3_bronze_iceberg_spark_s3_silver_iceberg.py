@@ -4,7 +4,8 @@ from pyspark.sql.functions import col, length, when, lit, current_date
 from dotenv import load_dotenv
 
 # ✅ 1) 환경 변수 로드
-load_dotenv(r"C:/ITWILL/SportsDrinkForecast/docker-elk/.env")
+load_dotenv(r"C:/project/sportsdrink-pipeline-spark-airflow/data_pipeline/docker/.env")
+env = os.getenv("ENV", "dev")  # 기본값은 dev
 
 # ✅ 2) Spark 세션 생성 (정적 설정)
 spark = (
@@ -19,7 +20,7 @@ spark = (
     .config("spark.sql.catalog.hadoop_hms", "org.apache.iceberg.spark.SparkCatalog")
     .config("spark.sql.catalog.hadoop_hms.catalog-impl", "org.apache.iceberg.hive.HiveCatalog")
     .config("spark.sql.catalog.hadoop_hms.uri", "thrift://localhost:9083")
-    .config("spark.sql.catalog.hadoop_hms.warehouse", "s3a://deokjin-test-datalake/data/")
+    .config("spark.sql.catalog.hadoop_hms.warehouse", f"s3a://deokjin-test-datalake/data/{env}/")
     .config("spark.hadoop.fs.s3a.access.key", os.getenv("AWS_ACCESS_KEY_ID"))
     .config("spark.hadoop.fs.s3a.secret.key", os.getenv("AWS_SECRET_ACCESS_KEY"))
     .config("spark.hadoop.fs.s3a.endpoint", "s3.ap-northeast-2.amazonaws.com")

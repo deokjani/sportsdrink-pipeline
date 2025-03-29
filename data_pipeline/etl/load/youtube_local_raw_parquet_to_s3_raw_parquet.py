@@ -4,7 +4,7 @@ from datetime import datetime
 from dotenv import load_dotenv
 
 # ✅ 1) 환경변수(.env)에서 AWS 키 불러오기
-load_dotenv(r"C:/ITWILL/SportsDrinkForecast/docker-elk/.env")
+load_dotenv(r"C:/project/sportsdrink-pipeline-spark-airflow/data_pipeline/docker/.env")
 
 # ✅ 2) S3 관련 상수 설정
 S3_BUCKET = "deokjin-test-datalake"          # 내 S3 버킷 이름
@@ -46,9 +46,9 @@ def upload_file_to_s3(local_file_path, relative_s3_path):
 # ✅ 7) 실행
 if __name__ == "__main__":
     # ✅ 새로운 로컬 디렉토리 구조:
-    # C:/ITWILL/SportsDrinkForecast/data_pipeline/data/raw/{오늘날짜}/{서비스명_출처_타입_주기}
+    # C:/project/sportsdrink-pipeline-spark-airflow/data_pipeline/data/raw/{오늘날짜}/{서비스명_출처_타입_주기}
     local_base_path = os.path.join(
-        r"C:\ITWILL\SportsDrinkForecast\data_pipeline\data\raw",
+        r"C:\project\sportsdrink-pipeline-spark-airflow\data_pipeline\data\raw",
         today_date,                     # 날짜 폴더
         folder_name_pattern             # 서비스명_출처_타입_주기 폴더
     )
