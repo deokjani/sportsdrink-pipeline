@@ -109,7 +109,7 @@ data_pipeline/
 │   └── validate/      # 품질 검증
 ├── airflow/           # DAG 및 자동화 관련 코드
 ├── docker/            # Docker 및 환경 설정
-├── features/          # 학습용 feature 저장소
+├── data/              # Data 저장소
 └── scripts/           # Spark 실행 스크립트
 ```
 
