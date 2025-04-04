@@ -1,9 +1,10 @@
 
-# SportsDrink Pipeline: API 기반 ETL 데이터 파이프라인 구축
+# SportsDrink Pipeline: Airflow 기반 ETL 데이터 파이프라인 구축
 
-이 프로젝트는 스포츠음료 점유율에 대한 데이터를 수집하고, 정제하여 분석 가능한 구조로 저장하는 End-to-End 데이터 파이프라인입니다.  
-YouTube, Naver 등 외부 API를 통해 데이터를 수집하고, Spark와 Iceberg를 활용해 효율적으로 관리할 수 있는 데이터 저장 구조를 구현했습니다.  
-자동화와 안정성까지 고려해 실무에서 사용할 수 있는 형태로 구성되었습니다.
+이 프로젝트는 스포츠음료 점유율에 대한 데이터를 수집하고, 정제하여 분석 가능한 구조로 저장하는 End-to-End 데이터 파이프라인입니다.
+YouTube, Naver 등 외부 API 및 RSS를 통해 데이터를 수집하고, Apache Kafka를 통해 스트리밍 처리한 데이터를 Spark 기반으로 가공한 후, Iceberg 포맷으로 저장합니다.
+또한, 수집-정제-저장 전 과정을 Apache Airflow로 스케줄링 및 자동화하여 안정적으로 운영 가능하도록 구성했습니다.
+실제 실무 환경에서도 활용 가능한 확장성과 자동화, 실시간성까지 고려한 데이터 엔지니어링 통합 파이프라인입니다.
 
 ---
 
@@ -13,6 +14,7 @@ YouTube, Naver 등 외부 API를 통해 데이터를 수집하고, Spark와 Iceb
 - 수집된 데이터는 S3에 저장되고, Apache Spark를 통해 정제 및 가공 과정을 거칩니다.
 - 정제된 데이터는 Iceberg 포맷으로 저장되며, Hive Metastore에 등록되어 Trino 및 Spark SQL로 바로 조회할 수 있습니다.
 - GitHub Actions와 Airflow를 이용해 코드 자동 배포 및 ETL 스케줄링을 구성했습니다.
+- Kafka를 통해 뉴스 기사를 실시간으로 수집하고, Delta Lake에 저장하여 시계열 분석 기반 자료로 활용합니다.
 
 ---
 
@@ -21,7 +23,7 @@ YouTube, Naver 등 외부 API를 통해 데이터를 수집하고, Spark와 Iceb
 전체 파이프라인은 다음과 같은 흐름으로 구성됩니다.
 
 ```
-Apache NiFi → S3 (raw 저장) → Spark (정제) → Iceberg (저장 및 버전관리)
+Apache NiFi / Kafka → S3 / Delta (raw 저장) → Spark (정제) → Iceberg (저장 및 버전관리)
                         ↓
          Hive Metastore ↔ Trino / Spark SQL (분석)
                         ↓
@@ -34,8 +36,8 @@ Apache NiFi → S3 (raw 저장) → Spark (정제) → Iceberg (저장 및 버�
 
 | 구분       | 기술 요소 |
 |------------|-----------|
-| 수집       | Naver API, YouTube API, Apache NiFi |
-| 저장       | AWS S3, Apache Iceberg, Hive Metastore |
+| 수집       | Naver API, YouTube API, Apache NiFi, Kafka |
+| 저장       | AWS S3, Apache Iceberg, Hive Metastore, Delta Lake |
 | 처리       | Apache Spark, PySpark, Adaptive Execution |
 | 분석       | Trino, Spark SQL |
 | 자동화     | Apache Airflow, GitHub Actions |
@@ -55,6 +57,15 @@ Apache NiFi → S3 (raw 저장) → Spark (정제) → Iceberg (저장 및 버�
 - 날짜 기반 파티셔닝
 
 또한 데이터 품질 검증 결과는 Slack을 통해 실시간으로 알림을 받을 수 있도록 구성했습니다.
+
+---
+
+## Kafka 기반 뉴스 수집 및 Delta 저장
+
+- `news_rss_topic` Kafka Topic을 통해 RSS 기반 실시간 뉴스 기사 수집
+- Spark Structured Streaming으로 Delta Lake에 저장
+- 날짜별 저장 디렉토리로 시계열 분석 가능 (ex. `News_RSS_Daily_20250404`)
+- 브랜드 및 시장 키워드 기반 필터링 적용 (포카리, 게토레이, 마케팅 전략 등)
 
 ---
 
@@ -110,6 +121,7 @@ data_pipeline/
 ├── airflow/           # DAG 및 자동화 관련 코드
 ├── docker/            # Docker 및 환경 설정
 ├── data/              # Data 저장소
+├── kafka/             # Kafka 기반 뉴스 수집 모듈
 └── scripts/           # Spark 실행 스크립트
 ```
 
