@@ -1,0 +1,22 @@
+🚀 Windows에서 GitHub Actions 로컬 실행을 위한 설치 순서
+
+1. Chocolatey 설치 (⚠️ 관리자 권한 PowerShell 필요)
+
+Set-ExecutionPolicy Bypass -Scope Process -Force; [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.ServicePointManager]::SecurityProtocol -bor 3072; iex ((New-Object System.Net.WebClient).DownloadString('https://community.chocolatey.org/install.ps1'))
+
+choco --version
+
+2. act 설치 (GitHub Actions 로컬 실행 도구)
+
+choco install act-cli
+
+act --version
+
+3. Docker 설치 (act 실행을 위해 필요)
+
+act는 Docker 컨테이너를 사용해서 GitHub Actions을 실행하므로 Docker가 필수!
+설치 링크: Docker Desktop 다운로드
+
+docker --version
+
+4. powershell > act 실행 >> 이후 설정 진행

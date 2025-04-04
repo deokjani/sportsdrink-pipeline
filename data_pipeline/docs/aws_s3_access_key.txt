@@ -1,0 +1,18 @@
+# aws 인증키 발급 방법
+
+aws 로그인 > 메뉴에 사용자 클릭 > 보안 자격 증명 > 엑세스 키 생성 > 잃어버리면 다시 생성해야하므로 반드시 저장!
+
+
+# AWS CLI 다운로드 페이지
+
+aws --version
+
+aws configure
+
+AWS Access Key ID [None]: Access Key ID
+AWS Secret Access Key [None]: Secret Access Key
+Default region name [None]: ap-northeast-2
+Default output format [None]: json
+
+
+

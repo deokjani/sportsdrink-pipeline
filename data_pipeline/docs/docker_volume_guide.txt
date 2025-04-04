@@ -1,0 +1,9 @@
+기존 볼륨 추출
+docker run --rm -v docker-elk_elasticsearch:/volume -v C:/elk_backup:/backup alpine sh -c "cp -r /volume/* /backup"
+
+도커 볼륨 마운트 (옮긴 후 실행)
+docker run -d --name elasticsearch -p 9200:9200 -e "discovery.type=single-node" -e "xpack.security.enabled=false" -v C:/elasticsearch_data:/usr/share/elasticsearch/data deokjani/docker-elk-elasticsearch:latest
+
+docker run -d --name kibana -p 5601:5601 -e "ELASTICSEARCH_HOST=http://elasticsearch:9200" --link elasticsearch deokjani/docker-elk-kibana:latest
+
+docker run -d --name logstash -p 5044:5044 -v C:/logstash/config:/usr/share/logstash/config deokjani/docker-elk-logstash:latest
